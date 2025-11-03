@@ -7,6 +7,19 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+# Python
+__pycache__/
+**/__pycache__/
+*.py[cod]
+*$py.class
+
+# (recomendado)
+.venv/
+.env
+*.sqlite3
+/media/
+staticfiles/
+
 node_modules
 dist
 dist-ssr

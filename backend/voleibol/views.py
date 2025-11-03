@@ -1,8 +1,9 @@
-# Create your views here.
 from rest_framework import viewsets
-from .models import Voleibol
-from .serializers import VoleibolSerializer
+from rest_framework.parsers import MultiPartParser, FormParser
+from .models import TeamRegistration
+from .serializers import TeamRegistrationSerializer
 
-class VoleibolViewSet(viewsets.ModelViewSet):
-    queryset = Voleibol.objects.all().order_by("id")
-    serializer_class = VoleibolSerializer
+class TeamRegistrationViewSet(viewsets.ModelViewSet):
+    queryset = TeamRegistration.objects.all()
+    serializer_class = TeamRegistrationSerializer
+    parser_classes = [MultiPartParser, FormParser]
