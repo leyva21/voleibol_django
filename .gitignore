@@ -1,0 +1,20 @@
+# === FRONTEND ===
+frontend/node_modules/
+frontend/dist/
+frontend/.env
+
+# === BACKEND ===
+backend/__pycache__/
+backend/**/*.py[cod]
+backend/venv/
+backend/env/
+backend/.env
+backend/node_modules/
+
+# === COMUNES ===
+*.log
+.DS_Store
+Thumbs.db
+.env
+.idea/
+.vscode/
