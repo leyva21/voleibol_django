@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.urls import path, include
 from rest_framework import routers
-from voleibol.views import TeamRegistrationViewSet
+from voleibol.views import TeamRegistrationViewSet, me_view
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from django.conf import settings
 from django.conf.urls.static import static
@@ -17,6 +17,7 @@ urlpatterns = [
     path("api/auth/login/", TokenObtainPairView.as_view(), name="token_obtain_pair"),
     path("api/auth/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
     path("api/verify-receipt/", DetectReceiptView.as_view(), name="verify_receipt"),
+    path("api/auth/me/", me_view, name="me"),
 ]
 
 if settings.DEBUG:

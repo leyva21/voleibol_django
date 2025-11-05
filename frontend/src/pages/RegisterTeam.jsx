@@ -1,6 +1,7 @@
 import { useState } from "react";
 import Navbar from "../components/Navbar";
 import { useNavigate } from "react-router-dom";
+import { createRegistration } from "../api.js";
 
 const API_BASE = import.meta.env.VITE_API_BASE || "http://127.0.0.1:8000";
 const MAX_MB = 5;
@@ -13,16 +14,8 @@ function fileExt(name) {
 }
 
 export default function RegisterTeam() {
+  const PASS_RE = /^(?=.*[A-Za-z])(?=.*\d).{8,}$/;
   const navigate = useNavigate();
-  const [form, setForm] = useState({
-    team_name: "",
-    category: "",
-    payment_reference: "",
-    delegate_name: "",
-    email: "",
-    address: "",
-    phone: "",
-  });
   const [logo, setLogo] = useState(null);
   const [proof, setProof] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -30,9 +23,63 @@ export default function RegisterTeam() {
   const [err, setErr] = useState(null);
   const [ocrResult, setOcrResult] = useState(null);
 
-  function onChange(e) {
-    setForm({ ...form, [e.target.name]: e.target.value });
+  const [form, setForm] = useState({
+    team_name: "", category: "", payment_reference: "",
+    delegate_name: "", email: "", address: "", phone: "",
+    password: "", password_confirm: "",            // ⬅️ nuevos
+  });
+  const [passErr, setPassErr] = useState(null);
+
+  const PHONE_RE = /^\d{10}$/;
+  const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const [fieldErrors, setFieldErrors] = useState({ email: null, phone: null });
+
+  function onlyDigits(s) {
+    return s.replace(/\D/g, "");
   }
+
+  function onChange(e) {
+    const { name, value } = e.target;
+
+    if (name === "phone") {
+      const digits = onlyDigits(value).slice(0, 10);
+      setForm((s) => ({ ...s, phone: digits }));
+      setFieldErrors((s) => ({
+        ...s,
+        phone: digits && !PHONE_RE.test(digits) ? "El teléfono debe tener exactamente 10 dígitos." : null,
+      }));
+      return;
+    }
+
+    if (name === "email") {
+      const trimmed = value.trim();
+      setForm((s) => ({ ...s, email: trimmed }));
+      setFieldErrors((s) => ({
+        ...s,
+        email: trimmed && !EMAIL_RE.test(trimmed) ? "Correo no válido." : null,
+      }));
+      return;
+    }
+
+    if (name === "password" || name === "password_confirm") {
+      setForm((s) => ({ ...s, [name]: value }));
+
+      const pass = name === "password" ? value : form.password;
+      const confirm = name === "password_confirm" ? value : form.password_confirm;
+
+      if (!PASS_RE.test(pass)) {
+        setPassErr("Mín. 8 caracteres, incluir al menos una letra y un número.");
+      } else if (confirm && pass !== confirm) {
+        setPassErr("Las contraseñas no coinciden.");
+      } else {
+        setPassErr(null);
+      }
+      return;
+    }
+
+    setForm((s) => ({ ...s, [name]: value }));
+  }
+
 
   function onFile(setter, allowExt) {
     return (e) => {
@@ -78,7 +125,7 @@ export default function RegisterTeam() {
       }
     } catch (e) {
       setOcrResult(null);
-      setErr("Error al verificar el comprobante.");
+      setErr(`Error al verificar el comprobante. ${e.message}`);
     }
   }
 
@@ -89,11 +136,25 @@ export default function RegisterTeam() {
 
     if (!form.category) return setErr("Selecciona la categoría.");
     if (!proof) return setErr("Adjunta el comprobante de pago.");
+    if (!EMAIL_RE.test(form.email)) {
+      return setErr("Correo no válido.");
+    }
+    if (!PHONE_RE.test(form.phone)) {
+      return setErr("El teléfono debe tener exactamente 10 dígitos.");
+    }
+    if (!PASS_RE.test(form.password)) {
+      return setErr("La contraseña no cumple los requisitos.");
+    }
+    if (form.password !== form.password_confirm) {
+      return setErr("Las contraseñas no coinciden.");
+    }
 
     const fd = new FormData();
     Object.entries(form).forEach(([k, v]) => fd.append(k, v));
     if (logo) fd.append("logo", logo);
     if (proof) fd.append("payment_proof", proof);
+
+    await createRegistration(fd);
 
     try {
       setLoading(true);
@@ -136,7 +197,7 @@ export default function RegisterTeam() {
       if (proofEl) proofEl.value = "";
       setTimeout(() => {
         navigate("/login", { replace: true });
-      }, 600);
+      }, 800);
     } catch (e2) {
       setErr(e2.message);
     } finally {
@@ -281,28 +342,44 @@ export default function RegisterTeam() {
                     name="email"
                     value={form.email}
                     onChange={onChange}
-                    className="w-full rounded-lg border border-gray-300 px-4 py-3 text-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                    className={`w-full rounded-lg border px-4 py-3 text-lg focus:outline-none focus:ring-2 ${fieldErrors.email ? "border-red-500 focus:ring-red-300" : "border-gray-300 focus:ring-primary"}`}
                     placeholder="correo@ejemplo.com"
                     required
                   />
+                  {fieldErrors.email && <p className="text-sm text-red-600 mt-1">{fieldErrors.email}</p>}
                 </div>
 
                 <div>
                   <label className="block text-base font-medium mb-2">Teléfono/Celular *</label>
                   <input
+                    type="tel"
                     name="phone"
+                    inputMode="numeric"
+                    pattern="\d*"
+                    maxLength={10}
                     value={form.phone}
                     onChange={onChange}
-                    className="w-full rounded-lg border border-gray-300 px-4 py-3 text-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                    className={`w-full rounded-lg border px-4 py-3 text-lg focus:outline-none focus:ring-2 ${fieldErrors.phone ? "border-red-500 focus:ring-red-300" : "border-gray-300 focus:ring-primary"}`}
                     placeholder="10 dígitos"
                     required
                   />
+                  {fieldErrors.phone && <p className="text-sm text-red-600 mt-1">{fieldErrors.phone}</p>}
+                </div>
+
+                <div>
+                  <label className="block text-base font-medium mb-2">Contraseña *</label>
+                  <input type="password" name="password" value={form.password} onChange={onChange} className="w-full rounded-lg border border-gray-300 px-4 py-3 text-lg focus:outline-none focus:ring-2 focus:ring-primary" placeholder="Mín. 8 caracteres" required />
+                  <p className="text-sm text-gray-600 mt-1">
+                    Debe incluir al menos una <b>letra</b> y un <b>número</b>.
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-base font-medium mb-2">Confirmar Contraseña *</label>
+                  <input type="password" name="password_confirm" value={form.password_confirm} onChange={onChange} className="w-full rounded-lg border border-gray-300 px-4 py-3 text-lg focus:outline-none focus:ring-2 focus:ring-primary" placeholder="Repite tu contraseña" required/>
                 </div>
               </div>
 
-              <div className="mt-6 rounded-xl bg-teal-50 px-5 py-4 text-base text-teal-900 border border-teal-200 shadow">
-                <strong>Importante:</strong> Su contraseña será su número de teléfono. Asegúrese de recordarlo para iniciar sesión.
-              </div>
             </section>
 
             {err && (
@@ -313,6 +390,12 @@ export default function RegisterTeam() {
             {msg && (
               <div className="rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-green-800">
                 {msg}
+              </div>
+            )}
+
+            {passErr && (
+              <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-800 mt-2">
+                {passErr}
               </div>
             )}
 
