@@ -6,6 +6,7 @@ import Login from "./pages/Login";
 import DashboardLayout from "./layouts/DashboardLayout";
 import Dashboard from "./pages/Dashboard";
 import Equipos from "./pages/Equipos";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 export default function App() {
   return (
@@ -17,7 +18,13 @@ export default function App() {
         <Route path="/login" element={<Login />} />
 
         {/* Rutas dentro del panel */}
-        <Route element={<DashboardLayout />}>
+        <Route
+          element={
+            <ProtectedRoute roles={["Delegado", "Admin"]}>
+              <DashboardLayout />
+            </ProtectedRoute>
+          }
+        >
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/equipos" element={<Equipos />} />
           <Route path="/jugadores" element={<Dashboard />} />

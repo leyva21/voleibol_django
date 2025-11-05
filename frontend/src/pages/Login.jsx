@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import { saveTokens } from "../lib/auth";
+import { fetchProfile } from "../lib/user";
 
 const API_BASE = import.meta.env.VITE_API_BASE || "http://127.0.0.1:8000";
 
@@ -37,6 +38,7 @@ export default function Login() {
         }
         const data = await res.json(); // {access, refresh}
         saveTokens(data);
+        await fetchProfile().catch(() => {});
         navigate("/dashboard", { replace: true });
         } catch (e2) {
             setErr(e2.message);
@@ -79,7 +81,7 @@ export default function Login() {
                         required
                     />
                     <p className="text-xs text-gray-500 mt-1">
-                        Si te registraste, tu contraseña inicial es tu <b>teléfono</b>.
+                        Ingresa la contraseña que creaste durante el registro.
                     </p>
                     </div>
 

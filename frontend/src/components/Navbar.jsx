@@ -13,34 +13,43 @@ export default function Navbar({ onToggleSidebar }) {
     navigate("/login", { replace: true });
   }
 
-  const isDashboard = pathname.startsWith("/dashboard");
+  const inPanel = /^\/(dashboard|equipos|jugadores|ligas|pagos|credenciales|reportes|comunicaciones|configuracion)/.test(pathname);
 
   return (
-    <header className={`bg-blue-600 text-white shadow-md`}>
+    <header className="bg-blue-600 text-white shadow-md">
       <div className="mx-auto max-w-7xl px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          {isDashboard && (
-            <button
-              onClick={onToggleSidebar}
-              className="md:hidden flex items-center"
-            >
+          {inPanel && (
+            <button onClick={onToggleSidebar} className="md:hidden flex items-center">
               <Menu size={24} />
             </button>
           )}
+
           <div className="flex items-center gap-2">
             <Volleyball className="h-6 w-6" />
-            <Link to="/" className="font-semibold">
-              Sistema de Gestión de Ligas de Voleibol Chiapas
-            </Link>
+            {logged && inPanel ? (
+              <span className="font-semibold select-none cursor-default">
+                Sistema de Gestión de Ligas de Voleibol Chiapas
+              </span>
+            ) : (
+              <Link
+                to={logged ? "/dashboard" : "/"}
+                className="font-semibold"
+              >
+                Sistema de Gestión de Ligas de Voleibol Chiapas
+              </Link>
+            )}
           </div>
         </div>
 
         <div className="flex items-center gap-4 text-sm">
           {logged ? (
             <>
-              <Link to="/dashboard" className="hover:underline">
-                Panel
-              </Link>
+              {!inPanel && (
+                <Link to="/dashboard" className="hover:underline">
+                  Panel
+                </Link>
+              )}
               <button
                 onClick={logout}
                 className="rounded-md bg-white/10 px-3 py-1.5 hover:bg-white/20 transition"
@@ -51,17 +60,11 @@ export default function Navbar({ onToggleSidebar }) {
           ) : (
             !hideAuth && (
               <>
-                <Link
-                  to="/login"
-                  className="hover:underline flex items-center gap-1"
-                >
+                <Link to="/login" className="hover:underline flex items-center gap-1">
                   Iniciar Sesión
                   <ArrowRight className="inline h-4 w-4" />
                 </Link>
-                <Link
-                  to="/register"
-                  className="hover:underline flex items-center gap-1"
-                >
+                <Link to="/register" className="hover:underline flex items-center gap-1">
                   Registrarse
                   <Plus className="inline h-4 w-4" />
                 </Link>
